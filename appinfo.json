@@ -7,7 +7,13 @@
     "longName": "ScrabbleTwoLetters",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "data/twoletters.txt",
+                "name": "TWO_LETTERS",
+                "type": "raw"
+            }
+        ]
     },
     "sdkVersion": "2",
     "shortName": "ScrabbleTwoLetters",

@@ -19,6 +19,7 @@ BE - to have actuality
 BI - a bisexual
 BO - a pal
 BY - a side issue
+DA - father
 DE - of; from - used in names
 DO - a tone of the scale
 ED - pertaining to education
@@ -32,6 +33,8 @@ ES - the letter "S"
 ET - a past tense of eat
 EX - the letter "X"
 FA - a tone of the scale
+FE - Hebrew letter
+GI - martial arts garment
 GO - to move along
 HA - sound of surprise
 HE - male person
@@ -64,6 +67,7 @@ OD - a hypothetical force
 OE - Faeroe Islands whirlwind
 OF - coming from
 OH - to exclaim in surprise
+OI - interj. of dismay or pain
 OM - a mantra
 ON - batsman's side of wicket
 OP - a style of abstract art
@@ -75,12 +79,14 @@ OY - expresses dismay
 PA - father
 PE - a Hebrew letter
 PI - a Greek letter
+PO - chamber pot
 QI - circulating life energy
 RE - a tone of the scale
 SH - urges silence
 SI - ti (a tone of the scale)
 SO - sol (a tone of the scale)
 TA - expression of gratitude
+TE - same as TI, tone of scale
 TI - a tone of the scale
 TO - in the direction of
 UH - expresses hesitation

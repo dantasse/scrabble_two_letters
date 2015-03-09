@@ -2,20 +2,34 @@
 #include <string.h>
 
 Window *my_window;
-TextLayer *text_layer;
-ResHandle rh;
-char *all_text_buffer;
-uint8_t *all_text_buffer_uint;
-int n_words = 0;
+TextLayer *time_layer;
+TextLayer *date_layer;
+TextLayer *word_layer;
+TextLayer *defn_layer;
+
 char** words; // array of words.
-char** defns;
+int NUM_WORDS_IN_LIST = 105;
 
 static void update_time() {
-//   time_t temp = time(NULL);
-//   struct tm *tick_time = localtime(&temp);
-//   char *text = malloc(sizeof(char) * 8);
-//   strncpy(text, all_text_buffer, 8);
-  text_layer_set_text(text_layer, (const char*) all_text_buffer);
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+  char* current_time = "00:00";
+  strftime(current_time, 6 /*maxsize*/, "%l:%M", tick_time);
+  text_layer_set_text(time_layer, current_time);
+
+  char* current_date = "00/00/00";
+  // ugh there's no strftime thing for "month without leading zero",
+  // rolling my own...
+  snprintf(current_date, 9 /*maxsize*/, "%d/%d/%d", tick_time->tm_mon +1,
+           tick_time->tm_mday, tick_time->tm_year % 100);
+  
+  text_layer_set_text(date_layer, current_date);
+  
+  char* current_word = "ZZ";
+  int word_num = (tick_time->tm_hour * 60 + tick_time->tm_min) % NUM_WORDS_IN_LIST;
+  strncpy(current_word, words[word_num], 2);
+  text_layer_set_text(word_layer, current_word);
+  text_layer_set_text(defn_layer, words[word_num] + 4); // skip 4 char ahead
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -24,62 +38,62 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 char** get_words(char* buffer) {
   const char delim[2] = "\n";
-  words = malloc(sizeof(char*) * 1);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "starting get_words");
-
+  words = malloc(sizeof(char*) * NUM_WORDS_IN_LIST);
+  // TODO if we want to make this scale to beyond just these 105 words,
+  // maybe keep reallocing this instead of just mallocing it once? Meh.
+  
+  int n_words = 0;
   char* token = strtok(buffer, delim);
-  while( token != NULL ) {
+  while(token != NULL) {
     n_words++;
-    words = realloc(words, sizeof(char*) * n_words);
-    if (words == NULL)
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "alloc failed"); //allocation failed
     words[n_words-1] = malloc(sizeof(char)*strlen(token));
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "allocated a word");
     strcpy(words[n_words-1], token);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "copied a word");
-    token = strtok( NULL, delim );
+    token = strtok(NULL, delim);
   }
-//   while (buffer) {
-//     APP_LOG(APP_LOG_LEVEL_DEBUG, "calling strstr");
-//     if (strstr(buffer, delim)) {
-//     }
-//     buffer = strtok(NULL, delim);
-//   }
   return words;
-}
-
-char** get_defns(char* buffer) {
-  return defns;
 }
 
 void handle_init(void) {
   my_window = window_create();
   
   // Load the text from the twoletters.txt file.
-  // TODO break up the text, blah
-  rh = resource_get_handle(RESOURCE_ID_TWO_LETTERS);
+  ResHandle rh = resource_get_handle(RESOURCE_ID_TWO_LETTERS);
   size_t res_size = resource_size(rh) + 1;
-  all_text_buffer_uint = (uint8_t*) malloc(res_size);
+  uint8_t *all_text_buffer_uint = (uint8_t*) malloc(res_size);
   resource_load(rh, all_text_buffer_uint, res_size);
-  all_text_buffer = (char*) all_text_buffer_uint;
-  
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "calling get_words");  
-  // Break the text up into ... an array of words, and an array of defs?
+  char* all_text_buffer = (char*) all_text_buffer_uint;
   words = get_words(all_text_buffer);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "done with get_words");
 
-  defns = get_defns(all_text_buffer);
-  // crashes by here
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 
-  text_layer = text_layer_create(GRect(0, 0, 144, 20));
-  text_layer_set_background_color(text_layer, GColorBlack);
-  text_layer_set_text_color(text_layer, GColorClear);
-  text_layer_set_text(text_layer, "yo");
-  text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
-  text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-  layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(text_layer));
+  time_layer = text_layer_create(GRect(0, 0, 50, 48));
+  text_layer_set_background_color(time_layer, GColorClear);
+  text_layer_set_text_color(time_layer, GColorBlack);
+  text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text_alignment(time_layer, GTextAlignmentLeft);
+  layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(time_layer));
+
+  date_layer = text_layer_create(GRect(50, 0, 92, 48)); // end 2px from the end, just looks nicer
+  text_layer_set_background_color(date_layer, GColorClear);
+  text_layer_set_text_color(date_layer, GColorBlack);
+  text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text_alignment(date_layer, GTextAlignmentRight);
+  layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(date_layer));
+
+  word_layer = text_layer_create(GRect(0, 48, 144, 56));
+  text_layer_set_background_color(word_layer, GColorClear);
+  text_layer_set_text_color(word_layer, GColorBlack);
+  text_layer_set_font(word_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+  text_layer_set_text_alignment(word_layer, GTextAlignmentCenter);
+  layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(word_layer));
+  
+  defn_layer = text_layer_create(GRect(0, 104, 144, 64));
+  text_layer_set_background_color(defn_layer, GColorClear);
+  text_layer_set_text_color(defn_layer, GColorBlack);
+  text_layer_set_font(defn_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+  text_layer_set_text_alignment(defn_layer, GTextAlignmentLeft);
+  layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(defn_layer));
 
   // Show the Window on the watch, with animated=true
   window_stack_push(my_window, true);
@@ -88,7 +102,13 @@ void handle_init(void) {
 }
 
 void handle_deinit(void) {
-  text_layer_destroy(text_layer);
+  text_layer_destroy(time_layer);
+  text_layer_destroy(word_layer);
+  text_layer_destroy(defn_layer);
+  for(int i = 0; i < NUM_WORDS_IN_LIST; i++) {
+    free(words[i]);
+  }
+  free(words);
   window_destroy(my_window);
 }
 
